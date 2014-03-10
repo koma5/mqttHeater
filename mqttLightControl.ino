@@ -1,3 +1,4 @@
+
 #include <Ethernet.h>
 #include <PubSubClient.h>
 #include <SPI.h>
@@ -16,9 +17,9 @@ struct config_led
 
 
 // Update these with values suitable for your network.
-byte mac[]    = {  0x90, 0xA2, 0xDA, 0x60, 0x68, 0x64 };
+byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0xB9, 0x13 };
 byte server[] = { 172, 16, 0, 70 };
-byte ip[]     = { 172, 16, 0, 44 };
+byte ip[]     = { 172, 16, 0, 37 };
 
 void callback(char* topic, byte* payload, unsigned int length)
 {
@@ -39,8 +40,8 @@ void callback(char* topic, byte* payload, unsigned int length)
   }
 
 }
-
-PubSubClient client(server, 1883, callback);
+EthernetClient ethClient;
+PubSubClient client(server, 1883, callback, ethClient);
 
 void setup()
 {
@@ -68,9 +69,9 @@ void loop()
   }
   else
   {
-    client.connect("arduinoLightControl");
+    client.connect("arduinoVwHeaterControl");
     delay(5000);
-    client.subscribe("byteli/light/1");
+    client.subscribe("vw/heater");
   }
  
 }
@@ -117,7 +118,7 @@ void high(int pin, boolean publishState)
   
   if(publishState)
   {
-    client.publish("byteli/light/1/state", "on");
+    client.publish("vw/heater/state", "on");
   }
    
    saveState(pin, HIGH);
@@ -131,7 +132,7 @@ void low(int pin, boolean publishState)
   
   if(publishState)
   {
-    client.publish("byteli/light/1/state", "off");
+    client.publish("vw/heater/state", "off");
   }
    
    saveState(pin, LOW);
