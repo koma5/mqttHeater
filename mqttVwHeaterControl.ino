@@ -19,7 +19,7 @@ struct config_led
 // Update these with values suitable for your network.
 byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0xB9, 0x13 };
 byte server[] = { 172, 16, 0, 70 };
-byte ip[]     = { 172, 16, 0, 37 };
+byte ip[]     = { 172, 16, 42, 37 };
 
 void callback(char* topic, byte* payload, unsigned int length)
 {
@@ -41,7 +41,7 @@ void callback(char* topic, byte* payload, unsigned int length)
 
 }
 EthernetClient ethClient;
-PubSubClient client(server, 1883, callback, ethClient);
+PubSubClient client(server, 1883, callback);
 
 void setup()
 {
