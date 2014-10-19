@@ -44,13 +44,7 @@ void callback(char* topic, byte* payload, unsigned int length)
   
   if(length == 5 && message == "state")
   {
-    if(digitalRead(led) == HIGH)
-    {
-      pubState(led, true);
-    }
-    else {
-      pubState(led, false);
-    }
+    pubState(led, digitalRead(led));
   }
 
 }
@@ -108,14 +102,7 @@ void off(int pin)
 
 void toggle(int pin)
 {
-  if(digitalRead(pin) == LOW)
-  {
-    changeState(HIGH, pin, true);
-  }
-  else
-  {
-    changeState(LOW, pin, true);
-  }
+  changeState(!digitalRead(pin), pin, true);
 }
 
 void pubState(int pin, boolean state)
