@@ -24,24 +24,27 @@ byte ip[]     = { 172, 16, 42, 37 };
 void callback(char* topic, byte* payload, unsigned int length)
 {
   
-  if(length == 2 && payload[0] == 'o' && payload[1] == 'n')
+  payload[length] = '\0';
+  String message = (char *) payload;
+  
+  if(length == 2 && message == "on")
   {
     on(led);
   }
   
-  if(length == 3 && payload[0] == 'o' && payload[1] == 'f' && payload[2] == 'f')
+  if(length == 3 && message == "off")
   {
     off(led);
   }
 
-  if(length == 0 || length == 6 && payload[0] == 't' && payload[1] == 'o' && payload[2] == 'g' && payload[3] == 'g' && payload[4] == 'l' && payload[5] == 'e')
+  if(length == 0 || length == 6 && message == "toggle")
   {
     toggle(led);
   }
 
 }
 EthernetClient ethClient;
-PubSubClient client(server, 1883, callback);
+PubSubClient client(server, 1883, callback, ethClient);
 
 void setup()
 {
