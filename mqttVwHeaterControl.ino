@@ -41,6 +41,17 @@ void callback(char* topic, byte* payload, unsigned int length)
   {
     toggle(led);
   }
+  
+  if(length == 5 && message == "state")
+  {
+    if(digitalRead(led) == HIGH)
+    {
+      pubState(led, true);
+    }
+    else {
+      pubState(led, false);
+    }
+  }
 
 }
 EthernetClient ethClient;
@@ -52,11 +63,11 @@ void setup()
   
   if(ledConfig.state)
   {
-    high(ledConfig.pin, false);
+    changeState(HIGH, ledConfig.pin, false);
   }
   else
   {
-    low(ledConfig.pin, false);
+    changeState(LOW, ledConfig.pin, false);
   }  
   
   Ethernet.begin(mac, ip);
@@ -83,7 +94,7 @@ void on(int pin)
 {
   if(digitalRead(pin) == LOW)
   {
-    high(pin, true);
+    changeState(HIGH, pin, true);
   }
 }
 
@@ -91,7 +102,7 @@ void off(int pin)
 {
   if(digitalRead(pin) == HIGH)
   {
-    low(pin, true);
+    changeState(LOW, pin, true);
   }
 }
 
@@ -99,11 +110,21 @@ void toggle(int pin)
 {
   if(digitalRead(pin) == LOW)
   {
-    high(pin, true);
+    changeState(HIGH, pin, true);
   }
   else
   {
-    low(pin, true);
+    changeState(LOW, pin, true);
+  }
+}
+
+void pubState(int pin, boolean state)
+{
+  if(state) {
+    client.publish("vw/heater/state", "on");
+  }
+  else {
+    client.publish("vw/heater/state", "off");
   }
 }
 
@@ -114,31 +135,17 @@ void saveState(int pin, boolean state)
   EEPROM_writeAnything(0, ledConfig);
 }
 
-void high(int pin, boolean publishState)
+void changeState(boolean state, int pin, boolean publishState)
 {
   
-  digitalWrite(pin, HIGH);
+  digitalWrite(pin, state);
   
   if(publishState)
   {
-    client.publish("vw/heater/state", "on");
+    pubState(pin, state);
   }
    
-   saveState(pin, HIGH);
-   
-}
-
-void low(int pin, boolean publishState)
-{
-  
-  digitalWrite(pin, LOW);
-  
-  if(publishState)
-  {
-    client.publish("vw/heater/state", "off");
-  }
-   
-   saveState(pin, LOW);
+   saveState(pin, state);
    
 }
 
