@@ -7,14 +7,28 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 
-int led = 9;
+#define ACTOR_COUNT 1
 
-struct config_led
-{
-    int pin;
-    boolean state;
-} ledConfig;
+typedef struct {
+  int pin;
 
+  String topic;
+  String stateTopic;
+} actor;
+
+struct mysavedState {
+  boolean state;
+} savedState;
+
+actor actors[ACTOR_COUNT] = {
+  {
+    9,
+    "vw/heater",
+    "vw/heater/state"
+  }
+};
+
+char stringBuf[25];
 
 // Update these with values suitable for your network.
 byte mac[]    = {  0x90, 0xA2, 0xDA, 0x0D, 0xB9, 0x13 };
@@ -26,26 +40,32 @@ void callback(char* topic, byte* payload, unsigned int length)
   
   payload[length] = '\0';
   String message = (char *) payload;
-  
-  if(length == 2 && message == "on")
-  {
-    on(led);
-  }
-  
-  if(length == 3 && message == "off")
-  {
-    off(led);
+  String myTopic =  topic;
+
+  for (int actor = 0; actor < ACTOR_COUNT; actor++) {
+    if(actors[actor].topic == myTopic) {
+      if(length == 2 && message == "on")
+      {
+        on(actor);
+      }
+
+      if(length == 3 && message == "off")
+      {
+        off(actor);
+      }
+
+      if(length == 0 || length == 6 && message == "toggle")
+      {
+        toggle(actor);
+      }
+
+      if(length == 5 && message == "state")
+      {
+        pubState(actor, digitalRead(actors[actor].pin));
+      }
+    }
   }
 
-  if(length == 0 || length == 6 && message == "toggle")
-  {
-    toggle(led);
-  }
-  
-  if(length == 5 && message == "state")
-  {
-    pubState(led, digitalRead(led));
-  }
 
 }
 EthernetClient ethClient;
@@ -53,19 +73,23 @@ PubSubClient client(server, 1883, callback, ethClient);
 
 void setup()
 {
-  EEPROM_readAnything(0, ledConfig);
-  
-  if(ledConfig.state)
-  {
-    changeState(HIGH, ledConfig.pin, false);
+  for (int actor = 0; actor < ACTOR_COUNT; actor++) {
+    EEPROM_readAnything(actor, savedState);
+
+    pinMode(actors[actor].pin, OUTPUT);
+
+    if(savedState.state)
+    {
+      changeState(HIGH, actor, false);
+    }
+    else
+    {
+      changeState(LOW, actor, false);
+    }
+
   }
-  else
-  {
-    changeState(LOW, ledConfig.pin, false);
-  }  
-  
+
   Ethernet.begin(mac, ip);
-  pinMode(led, OUTPUT);
 }
 
 void loop()
@@ -79,60 +103,64 @@ void loop()
   {
     client.connect("arduinoVwHeaterControl");
     delay(5000);
-    client.subscribe("vw/heater");
+    for (int actor = 0; actor < ACTOR_COUNT; actor++) {
+      actors[actor].topic.toCharArray(stringBuf, 25);
+      client.subscribe(stringBuf);
+    }
   }
  
 }
 
-void on(int pin)
+void on(int actor)
 {
-  if(digitalRead(pin) == LOW)
+  if(digitalRead(actors[actor].pin) == LOW)
   {
-    changeState(HIGH, pin, true);
+    changeState(HIGH, actor, true);
   }
 }
 
-void off(int pin)
+void off(int actor)
 {
-  if(digitalRead(pin) == HIGH)
+  if(digitalRead(actors[actor].pin) == HIGH)
   {
-    changeState(LOW, pin, true);
+    changeState(LOW, actor, true);
   }
 }
 
-void toggle(int pin)
+void toggle(int actor)
 {
-  changeState(!digitalRead(pin), pin, true);
+  changeState(!digitalRead(actors[actor].pin), actor, true);
 }
 
-void pubState(int pin, boolean state)
+void pubState(int actor, boolean state)
 {
   if(state) {
-    client.publish("vw/heater/state", "on");
+    actors[actor].stateTopic.toCharArray(stringBuf, 25);
+    client.publish(stringBuf, "on");
   }
   else {
-    client.publish("vw/heater/state", "off");
+    actors[actor].stateTopic.toCharArray(stringBuf, 25);
+    client.publish(stringBuf, "off");
   }
 }
 
-void saveState(int pin, boolean state)
+void saveState(int actor, boolean state)
 {
-  ledConfig.pin = pin;
-  ledConfig.state = state;
-  EEPROM_writeAnything(0, ledConfig);
+  savedState.state = state;
+  EEPROM_writeAnything(actor, savedState);
 }
 
-void changeState(boolean state, int pin, boolean publishState)
+void changeState(boolean state, int actor, boolean publishState)
 {
-  
-  digitalWrite(pin, state);
+
+  digitalWrite(actors[actor].pin, state);
   
   if(publishState)
   {
-    pubState(pin, state);
+    pubState(actor, state);
   }
    
-   saveState(pin, state);
+  saveState(actor, state);
    
 }
 
