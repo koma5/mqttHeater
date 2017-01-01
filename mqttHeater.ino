@@ -7,7 +7,7 @@
 #include <EEPROM.h>
 #include "EEPROMAnything.h"
 
-#define ACTOR_COUNT 1
+#define ACTOR_COUNT 2
 
 typedef struct {
   int pin;
@@ -25,6 +25,11 @@ actor actors[ACTOR_COUNT] = {
     9,
     "vw/heater",
     "vw/heater/state"
+  },
+  {
+    8,
+    "vw/something",
+    "vw/something/state"
   }
 };
 
