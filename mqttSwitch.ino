@@ -106,7 +106,7 @@ void loop()
   }
   else
   {
-    client.connect("arduinoVwHeaterControl");
+    client.connect("mqttSwitch");
     delay(5000);
     for (int actor = 0; actor < ACTOR_COUNT; actor++) {
       actors[actor].topic.toCharArray(stringBuf, 25);
